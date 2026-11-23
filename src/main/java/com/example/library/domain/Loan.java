@@ -63,6 +63,15 @@ public class Loan {
         return Math.max(1, days);
     }
 
+    /** 在借且未逾期时距应还日期的剩余天数；已归还或已逾期返回 0 */
+    @Transient
+    public long getDaysLeft() {
+        if (status == LoanStatus.RETURNED || isOverdue()) {
+            return 0;
+        }
+        return ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), dueAt.toLocalDate());
+    }
+
     @Transient
     public String getBorrowedAtText() {
         return format(borrowedAt);

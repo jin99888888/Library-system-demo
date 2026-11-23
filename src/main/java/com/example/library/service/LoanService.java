@@ -88,6 +88,12 @@ public class LoanService {
         return loans.findReaderIdsWithOverdue(LoanStatus.BORROWED, LocalDateTime.now());
     }
 
+    /** 某位读者当前在借的册数。 */
+    @Transactional(readOnly = true)
+    public long activeCount(Long readerId) {
+        return loans.countByReaderIdAndStatus(readerId, LoanStatus.BORROWED);
+    }
+
     @Transactional
     public Loan returnLoan(Long loanId) {
         Loan loan = loans.findById(loanId)

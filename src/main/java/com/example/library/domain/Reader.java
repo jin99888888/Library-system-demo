@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -44,6 +45,15 @@ public class Reader {
     @Size(max = 30)
     @Column(length = 30)
     private String phone;
+
+    @Email
+    @Size(max = 120)
+    @Column(length = 120)
+    private String email;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 16)
+    private Gender gender;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
@@ -79,6 +89,11 @@ public class Reader {
         return createdAt == null ? "—" : createdAt.format(DATE);
     }
 
+    @Transient
+    public String getGenderText() {
+        return gender == null ? "—" : gender.getLabel();
+    }
+
     public Long getId() {
         return id;
     }
@@ -109,6 +124,22 @@ public class Reader {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email == null || email.isBlank() ? null : email.trim();
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
     }
 
     public ReaderStatus getStatus() {

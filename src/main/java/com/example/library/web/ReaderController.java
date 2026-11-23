@@ -1,5 +1,8 @@
 package com.example.library.web;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.library.domain.Gender;
 import com.example.library.domain.Reader;
 import com.example.library.domain.ReaderStatus;
 import com.example.library.service.LoanService;
@@ -38,7 +42,13 @@ public class ReaderController {
                        @RequestParam(required = false) Integer jump,
                        Model model) {
         int requested = jump != null ? jump - 1 : page;
-        model.addAttribute("page", Paging.fetch(p -> readers.search(q, p, PAGE_SIZE), requested));
+        var pageResult = Paging.fetch(p -> readers.search(q, p, PAGE_SIZE), requested);
+        Map<Long, Long> loanCounts = new LinkedHashMap<>();
+        for (Reader reader : pageResult.getContent()) {
+            loanCounts.put(reader.getId(), loans.activeCount(reader.getId()));
+        }
+        model.addAttribute("page", pageResult);
+        model.addAttribute("loanCounts", loanCounts);
         model.addAttribute("q", q == null ? "" : q);
         model.addAttribute("overdueReaderIds", loans.readersWithOverdue());
         return "readers/list";
@@ -48,6 +58,7 @@ public class ReaderController {
     public String createForm(Model model) {
         model.addAttribute("reader", new Reader());
         model.addAttribute("statuses", ReaderStatus.values());
+        model.addAttribute("genders", Gender.values());
         return "readers/form";
     }
 
@@ -74,6 +85,7 @@ public class ReaderController {
                          RedirectAttributes redirectAttributes) {
         if (binding.hasErrors()) {
             model.addAttribute("statuses", ReaderStatus.values());
+            model.addAttribute("genders", Gender.values());
             return "readers/form";
         }
         readers.create(reader);
@@ -85,6 +97,7 @@ public class ReaderController {
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("reader", readers.get(id));
         model.addAttribute("statuses", ReaderStatus.values());
+        model.addAttribute("genders", Gender.values());
         return "readers/form";
     }
 
@@ -97,6 +110,7 @@ public class ReaderController {
         if (binding.hasErrors()) {
             reader.setId(id);
             model.addAttribute("statuses", ReaderStatus.values());
+            model.addAttribute("genders", Gender.values());
             return "readers/form";
         }
         readers.update(id, reader);

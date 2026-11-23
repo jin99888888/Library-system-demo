@@ -27,6 +27,7 @@
             <th>借出时间</th>
             <th>应还时间</th>
             <th>归还时间</th>
+            <th>剩余 / 逾期</th>
             <th>状态</th>
             <th class="actions">操作</th>
         </tr>
@@ -42,10 +43,15 @@
             <td th:text="${loan.dueAtText}"></td>
             <td th:text="${loan.returnedAtText}"></td>
             <td>
-                <span class="badge ok" th:if="${loan.status.name() == 'RETURNED'}">已归还</span>
-                <span class="badge warn" th:if="${loan.status.name() == 'BORROWED' and loan.overdue}"
+                <span class="muted-text" th:if="${loan.status.name() == 'RETURNED'}">—</span>
+                <span class="badge warn" th:if="${loan.status.name() != 'RETURNED' and loan.overdue}"
                       th:text="|逾期 ${loan.overdueDays} 天|"></span>
-                <span class="badge" th:if="${loan.status.name() == 'BORROWED' and !loan.overdue}">在借</span>
+                <span class="badge ok" th:if="${loan.status.name() != 'RETURNED' and !loan.overdue}"
+                      th:text="${loan.daysLeft == 0} ? '今天到期' : |剩 ${loan.daysLeft} 天|"></span>
+            </td>
+            <td>
+                <span class="badge ok" th:if="${loan.status.name() == 'RETURNED'}">已归还</span>
+                <span class="badge" th:if="${loan.status.name() == 'BORROWED'}">在借</span>
             </td>
             <td class="actions">
                 <form class="inline" method="post" th:if="${loan.status.name() == 'BORROWED'}"
@@ -55,7 +61,7 @@
             </td>
         </tr>
         <tr th:if="${page.totalElements == 0}">
-            <td colspan="7" class="empty">暂无借阅记录。</td>
+            <td colspan="8" class="empty">暂无借阅记录。</td>
         </tr>
         </tbody>
     </table>

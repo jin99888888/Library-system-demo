@@ -25,8 +25,16 @@
                 <span class="value" th:text="${reader.cardNo}"></span>
             </div>
             <div class="info-item">
+                <span class="label">性别</span>
+                <span class="value" th:text="${reader.genderText}"></span>
+            </div>
+            <div class="info-item">
                 <span class="label">电话</span>
                 <span class="value" th:text="${reader.phone ?: '—'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">邮箱</span>
+                <span class="value" th:text="${reader.email ?: '—'}"></span>
             </div>
             <div class="info-item">
                 <span class="label">状态</span>
@@ -66,7 +74,7 @@
             <th>图书</th>
             <th>借出时间</th>
             <th>应还时间</th>
-            <th>状态</th>
+            <th>剩余</th>
             <th class="actions">操作</th>
         </tr>
         </thead>
@@ -79,7 +87,8 @@
             <td th:text="${loan.dueAtText}"></td>
             <td>
                 <span class="badge warn" th:if="${loan.overdue}" th:text="|逾期 ${loan.overdueDays} 天|"></span>
-                <span class="badge" th:unless="${loan.overdue}">在借</span>
+                <span class="badge ok" th:unless="${loan.overdue}"
+                      th:text="${loan.daysLeft == 0} ? '今天到期' : |剩 ${loan.daysLeft} 天|"></span>
             </td>
             <td class="actions">
                 <form class="inline" method="post" th:action="@{/loans/{id}/return(id=${loan.id})}">

@@ -45,6 +45,8 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @EntityGraph(attributePaths = {"book", "reader"})
     List<Loan> findByReaderIdAndStatusOrderByDueAtAsc(Long readerId, LoanStatus status);
 
+    List<Loan> findByReaderId(Long readerId);
+
     @EntityGraph(attributePaths = {"book", "reader"})
     Page<Loan> findByReaderIdAndStatusOrderByReturnedAtDesc(Long readerId,
                                                            LoanStatus status,

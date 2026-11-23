@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.library.domain.Book;
+import com.example.library.domain.Gender;
 import com.example.library.domain.Reader;
 import com.example.library.domain.ReaderStatus;
 
@@ -126,19 +127,44 @@ class ReaderServiceTest {
     }
 
     @Test
-    @DisplayName("读者搜索支持证号、姓名、电话")
+    @DisplayName("读者搜索支持证号、姓名、电话、邮箱")
     void searchMatchesCardNoNameAndPhone() {
         Reader reader = newReader("R-3009", "钱七");
         reader.setPhone("13900001111");
+        reader.setEmail("qianqi@example.com");
         readers.update(reader.getId(), reader);
 
         Page<Reader> byCardNo = readers.search("3009", 0, 10);
         Page<Reader> byName = readers.search("钱七", 0, 10);
         Page<Reader> byPhone = readers.search("13900001111", 0, 10);
+        Page<Reader> byEmail = readers.search("qianqi@example.com", 0, 10);
 
         assertThat(byCardNo.getTotalElements()).isEqualTo(1);
         assertThat(byName.getTotalElements()).isEqualTo(1);
         assertThat(byPhone.getTotalElements()).isEqualTo(1);
+        assertThat(byEmail.getTotalElements()).isEqualTo(1);
         assertThat(byName.getContent().get(0).getId()).isEqualTo(reader.getId());
+    }
+
+    @Test
+    @DisplayName("邮箱与性别可以保存并随修改更新")
+    void emailAndGenderAreSaved() {
+        Reader reader = newReader("R-3010", "邮箱读者");
+        reader.setEmail("before@example.com");
+        reader.setGender(Gender.FEMALE);
+        readers.update(reader.getId(), reader);
+
+        Reader saved = readers.get(reader.getId());
+        assertThat(saved.getEmail()).isEqualTo("before@example.com");
+        assertThat(saved.getGender()).isEqualTo(Gender.FEMALE);
+        assertThat(saved.getGenderText()).isEqualTo("女");
+
+        saved.setEmail("after@example.com");
+        saved.setGender(Gender.MALE);
+        readers.update(saved.getId(), saved);
+
+        Reader updated = readers.get(reader.getId());
+        assertThat(updated.getEmail()).isEqualTo("after@example.com");
+        assertThat(updated.getGenderText()).isEqualTo("男");
     }
 }

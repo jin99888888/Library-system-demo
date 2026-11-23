@@ -612,4 +612,94 @@ class WebFlowTest {
                 .andExpect(view().name("error/business"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("读者不存在")));
     }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("读者表单包含邮箱与性别，非法邮箱会回到表单并提示")
+    void readerFormValidatesEmail() throws Exception {
+        mvc.perform(get("/readers/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("readers/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("type=\"email\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"gender\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("女")));
+
+        mvc.perform(post("/readers").with(csrf())
+                        .param("cardNo", "R-5001")
+                        .param("name", "邮箱错误读者")
+                        .param("email", "not-an-email")
+                        .param("maxBorrow", "5")
+                        .param("status", "ACTIVE"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("readers/form"))
+                .andExpect(model().attributeHasFieldErrors("reader", "email"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("读者列表展示邮箱、性别与在借数量")
+    void readersListShowsEmailGenderAndLoanCount() throws Exception {
+        com.example.library.domain.Reader reader = new com.example.library.domain.Reader();
+        reader.setCardNo("R-5002");
+        reader.setName("列表读者");
+        reader.setEmail("list@example.com");
+        reader.setGender(com.example.library.domain.Gender.FEMALE);
+        readers.save(reader);
+
+        mvc.perform(get("/readers"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("list@example.com")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(">女<")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("0 / 5")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("借阅列表与读者详情显示剩余天数、逾期天数")
+    void loansListShowsRemainingAndOverdueDays() throws Exception {
+        LocalDateTime base = LocalDateTime.now().withNano(0);
+
+        Book borrowedBook = new Book();
+        borrowedBook.setTitle("剩余天数示例");
+        borrowedBook.setAuthor("作者戊");
+        borrowedBook.setTotalCopies(1);
+        borrowedBook.setAvailableCopies(0);
+        borrowedBook = books.save(borrowedBook);
+
+        Book overdueBook = new Book();
+        overdueBook.setTitle("逾期天数示例");
+        overdueBook.setAuthor("作者己");
+        overdueBook.setTotalCopies(1);
+        overdueBook.setAvailableCopies(0);
+        overdueBook = books.save(overdueBook);
+
+        com.example.library.domain.Reader reader = new com.example.library.domain.Reader();
+        reader.setCardNo("R-5003");
+        reader.setName("天数读者");
+        reader = readers.save(reader);
+
+        Loan active = new Loan();
+        active.setBook(borrowedBook);
+        active.setReader(reader);
+        active.setBorrowedAt(base.minusDays(20));
+        active.setDueAt(base.plusDays(10));
+        loans.save(active);
+
+        Loan overdue = new Loan();
+        overdue.setBook(overdueBook);
+        overdue.setReader(reader);
+        overdue.setBorrowedAt(base.minusDays(45));
+        overdue.setDueAt(base.minusDays(5));
+        loans.save(overdue);
+
+        mvc.perform(get("/loans"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("剩 10 天")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("逾期 5 天")));
+
+        mvc.perform(get("/readers/" + reader.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("剩 10 天")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("逾期 5 天")));
+    }
 }

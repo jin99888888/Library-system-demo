@@ -13,7 +13,7 @@
 
     <groupId>com.example</groupId>
     <artifactId>library-system</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0</version>
     <name>library-system</name>
     <description>小型图书馆管理系统</description>
 

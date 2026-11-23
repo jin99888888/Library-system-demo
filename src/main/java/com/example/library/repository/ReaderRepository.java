@@ -21,6 +21,7 @@ public interface ReaderRepository extends JpaRepository<Reader, Long> {
             where lower(r.cardNo) like :kw
                or lower(r.name) like :kw
                or lower(coalesce(r.phone, '')) like :kw
+               or lower(coalesce(r.email, '')) like :kw
             order by r.id desc
             """)
     Page<Reader> search(@Param("kw") String keyword, Pageable pageable);

@@ -381,6 +381,10 @@ a:hover {
     color: var(--muted);
 }
 
+.muted-text {
+    color: var(--muted);
+}
+
 .inline {
     display: inline;
     margin: 0;

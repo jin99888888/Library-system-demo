@@ -63,6 +63,8 @@ public class ReaderService {
         reader.setCardNo(form.getCardNo());
         reader.setName(form.getName());
         reader.setPhone(form.getPhone());
+        reader.setEmail(form.getEmail());
+        reader.setGender(form.getGender());
         reader.setStatus(form.getStatus());
         reader.setMaxBorrow(form.getMaxBorrow());
         return readers.save(reader);
