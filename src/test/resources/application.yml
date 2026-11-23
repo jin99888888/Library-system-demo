@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:target/test-library.db?busy_timeout=5000
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+library:
+  loan:
+    period-days: 30
+  admin:
+    username: admin
+    password: admin123

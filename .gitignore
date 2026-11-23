@@ -1,0 +1,11 @@
+target/
+data/
+*.db
+*.db-shm
+*.db-wal
+.memsearch/
+.idea/
+*.iml
+.vscode/
+*.log
+.DS_Store

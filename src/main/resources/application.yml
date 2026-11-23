@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: library-system
+  datasource:
+    url: jdbc:sqlite:data/library.db?busy_timeout=5000&journal_mode=WAL
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 4
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.community.dialect.SQLiteDialect
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+
+library:
+  loan:
+    period-days: 30
+  admin:
+    username: admin
+    password: admin123

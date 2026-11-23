@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head('操作失败')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('')}"></header>
+<main class="container narrow">
+    <div class="page-head">
+        <h1>操作失败</h1>
+    </div>
+    <div class="alert err" th:text="${message}">业务校验未通过</div>
+    <a class="btn" href="javascript:history.back()">返回上一页</a>
+    <a class="btn ghost" th:href="@{/}">回到首页</a>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

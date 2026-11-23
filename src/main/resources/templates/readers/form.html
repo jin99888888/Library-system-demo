@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head('读者')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('readers')}"></header>
+<main class="container narrow">
+    <div class="page-head">
+        <h1 th:text="${reader.id == null} ? '登记读者' : '编辑读者'">读者</h1>
+        <a class="btn ghost" th:href="@{/readers}">返回列表</a>
+    </div>
+
+    <div class="card">
+        <form class="form" method="post" th:object="${reader}"
+              th:action="${reader.id == null} ? @{/readers} : @{/readers/{id}(id=${reader.id})}">
+            <label>借书证号 <span class="req">*</span>
+                <input type="text" th:field="*{cardNo}" maxlength="32" required>
+                <span class="field-error" th:if="${#fields.hasErrors('cardNo')}" th:errors="*{cardNo}"></span>
+            </label>
+            <label>姓名 <span class="req">*</span>
+                <input type="text" th:field="*{name}" maxlength="60" required>
+                <span class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </label>
+            <label>电话
+                <input type="text" th:field="*{phone}" maxlength="30">
+                <span class="field-error" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></span>
+            </label>
+            <label>状态
+                <select th:field="*{status}">
+                    <option th:each="s : ${statuses}" th:value="${s}"
+                            th:text="${s.name() == 'ACTIVE'} ? '正常' : '停用'"></option>
+                </select>
+            </label>
+            <label>可借上限（册）
+                <input type="number" th:field="*{maxBorrow}" min="1" max="50" required>
+                <span class="field-error" th:if="${#fields.hasErrors('maxBorrow')}" th:errors="*{maxBorrow}"></span>
+            </label>
+            <div class="form-actions">
+                <button class="btn primary" type="submit">保存</button>
+                <a class="btn" th:href="@{/readers}">取消</a>
+            </div>
+        </form>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

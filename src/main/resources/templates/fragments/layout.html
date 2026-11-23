@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · 图书管理系统'">图书管理系统</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:fragment="nav(active)" class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/}">📚 图书管理系统</a>
+        <nav class="menu">
+            <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? ' active'">概览</a>
+            <a th:href="@{/books}" th:classappend="${active == 'books'} ? ' active'">图书</a>
+            <a th:href="@{/readers}" th:classappend="${active == 'readers'} ? ' active'">读者</a>
+            <a th:href="@{/loans}" th:classappend="${active == 'loans'} ? ' active'">借还</a>
+        </nav>
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button class="btn ghost sm" type="submit">退出</button>
+        </form>
+    </div>
+</header>
+
+<footer th:fragment="footer" class="footer">
+    <p>图书管理系统 MVP · v0.1</p>
+</footer>
+</body>
+</html>

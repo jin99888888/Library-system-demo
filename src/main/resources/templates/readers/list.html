@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head('读者')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('readers')}"></header>
+<main class="container">
+    <div class="page-head">
+        <h1>读者</h1>
+        <a class="btn primary" th:href="@{/readers/new}">+ 登记读者</a>
+    </div>
+
+    <div class="alert ok" th:if="${msg}" th:text="${msg}"></div>
+
+    <form class="search" method="get" th:action="@{/readers}">
+        <input type="text" name="q" th:value="${q}" placeholder="按借书证号、姓名或电话搜索">
+        <button class="btn" type="submit">搜索</button>
+        <a class="btn ghost" th:href="@{/readers}" th:if="${!#strings.isEmpty(q)}">清空</a>
+    </form>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>借书证号</th>
+            <th>姓名</th>
+            <th>电话</th>
+            <th>状态</th>
+            <th>可借上限</th>
+            <th>登记时间</th>
+            <th class="actions">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="reader : ${page.content}">
+            <td th:text="${reader.cardNo}"></td>
+            <td th:text="${reader.name}"></td>
+            <td th:text="${reader.phone ?: '—'}"></td>
+            <td>
+                <span class="badge" th:classappend="${reader.active} ? ' ok' : ' muted'"
+                      th:text="${reader.active} ? '正常' : '停用'"></span>
+            </td>
+            <td th:text="${reader.maxBorrow}"></td>
+            <td th:text="${reader.createdAtText}"></td>
+            <td class="actions">
+                <a class="btn sm" th:href="@{/readers/{id}/edit(id=${reader.id})}">编辑</a>
+                <form class="inline" method="post" th:action="@{/readers/{id}/delete(id=${reader.id})}">
+                    <button class="btn sm danger" type="submit"
+                            onclick="return confirm('确定删除该读者吗？')">删除</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${page.totalElements == 0}">
+            <td colspan="7" class="empty">还没有读者，点击右上角「登记读者」开始录入。</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="pager" th:if="${page.totalPages > 1}">
+        <a class="btn sm" th:if="${page.hasPrevious}"
+           th:href="@{/readers(q=${q},page=${page.number - 1})}">上一页</a>
+        <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页，共 ${page.totalElements} 人|"></span>
+        <a class="btn sm" th:if="${page.hasNext}"
+           th:href="@{/readers(q=${q},page=${page.number + 1})}">下一页</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head('图书')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('books')}"></header>
+<main class="container narrow">
+    <div class="page-head">
+        <h1 th:text="${book.id == null} ? '新增图书' : '编辑图书'">图书</h1>
+        <a class="btn ghost" th:href="@{/books}">返回列表</a>
+    </div>
+
+    <div class="card">
+        <form class="form" method="post" th:object="${book}"
+              th:action="${book.id == null} ? @{/books} : @{/books/{id}(id=${book.id})}">
+            <label>书名 <span class="req">*</span>
+                <input type="text" th:field="*{title}" maxlength="200" required>
+                <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
+            </label>
+            <label>作者 <span class="req">*</span>
+                <input type="text" th:field="*{author}" maxlength="120" required>
+                <span class="field-error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}"></span>
+            </label>
+            <label>ISBN
+                <input type="text" th:field="*{isbn}" maxlength="32">
+                <span class="field-error" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></span>
+            </label>
+            <label>分类
+                <input type="text" th:field="*{category}" maxlength="50">
+            </label>
+            <label>出版社
+                <input type="text" th:field="*{publisher}" maxlength="100">
+            </label>
+            <label>馆藏位置
+                <input type="text" th:field="*{location}" maxlength="50" placeholder="如：A区-3排-2层">
+            </label>
+            <label>总册数 <span class="req">*</span>
+                <input type="number" th:field="*{totalCopies}" min="1" required>
+                <span class="field-error" th:if="${#fields.hasErrors('totalCopies')}" th:errors="*{totalCopies}"></span>
+                <span class="hint" th:if="${book.id != null}"
+                      th:text="|当前已借出 ${book.borrowedCopies} 册，总册数不能小于已借出册数|"></span>
+            </label>
+            <div class="form-actions">
+                <button class="btn primary" type="submit">保存</button>
+                <a class="btn" th:href="@{/books}">取消</a>
+            </div>
+        </form>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

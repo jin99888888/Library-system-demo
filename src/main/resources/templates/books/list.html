@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head('图书')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('books')}"></header>
+<main class="container">
+    <div class="page-head">
+        <h1>图书</h1>
+        <a class="btn primary" th:href="@{/books/new}">+ 新增图书</a>
+    </div>
+
+    <div class="alert ok" th:if="${msg}" th:text="${msg}"></div>
+
+    <form class="search" method="get" th:action="@{/books}">
+        <input type="text" name="q" th:value="${q}" placeholder="按书名、作者或 ISBN 搜索">
+        <button class="btn" type="submit">搜索</button>
+        <a class="btn ghost" th:href="@{/books}" th:if="${!#strings.isEmpty(q)}">清空</a>
+    </form>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>书名</th>
+            <th>作者</th>
+            <th>ISBN</th>
+            <th>分类</th>
+            <th>馆藏位置</th>
+            <th>可借 / 总册</th>
+            <th class="actions">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="book : ${page.content}">
+            <td th:text="${book.title}"></td>
+            <td th:text="${book.author}"></td>
+            <td th:text="${book.isbn ?: '—'}"></td>
+            <td th:text="${book.category ?: '—'}"></td>
+            <td th:text="${book.location ?: '—'}"></td>
+            <td>
+                <span class="badge" th:classappend="${book.availableCopies == 0} ? ' warn'"
+                      th:text="|${book.availableCopies} / ${book.totalCopies}|"></span>
+            </td>
+            <td class="actions">
+                <a class="btn sm" th:href="@{/books/{id}/edit(id=${book.id})}">编辑</a>
+                <form class="inline" method="post" th:action="@{/books/{id}/delete(id=${book.id})}">
+                    <button class="btn sm danger" type="submit"
+                            onclick="return confirm('确定删除该图书吗？')">删除</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${page.totalElements == 0}">
+            <td colspan="7" class="empty">还没有图书，点击右上角「新增图书」开始录入。</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="pager" th:if="${page.totalPages > 1}">
+        <a class="btn sm" th:if="${page.hasPrevious}"
+           th:href="@{/books(q=${q},page=${page.number - 1})}">上一页</a>
+        <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页，共 ${page.totalElements} 种|"></span>
+        <a class="btn sm" th:if="${page.hasNext}"
+           th:href="@{/books(q=${q},page=${page.number + 1})}">下一页</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
