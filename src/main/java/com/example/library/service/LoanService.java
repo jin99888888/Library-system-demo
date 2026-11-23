@@ -1,6 +1,7 @@
 package com.example.library.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -100,5 +101,31 @@ public class LoanService {
             case "OVERDUE" -> loans.findOverdue(LoanStatus.BORROWED, LocalDateTime.now(), pageable);
             default -> loans.findAllByOrderByBorrowedAtDesc(pageable);
         };
+    }
+
+    /** 某本书当前未归还的借阅记录，按应还时间升序（最紧急的在前）。 */
+    @Transactional(readOnly = true)
+    public List<Loan> activeByBook(Long bookId) {
+        return loans.findByBookIdAndStatusOrderByDueAtAsc(bookId, LoanStatus.BORROWED);
+    }
+
+    /** 某本书已归还的借阅历史，按归还时间倒序（最近的在前）。 */
+    @Transactional(readOnly = true)
+    public Page<Loan> historyByBook(Long bookId, int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size);
+        return loans.findByBookIdAndStatusOrderByReturnedAtDesc(bookId, LoanStatus.RETURNED, pageable);
+    }
+
+    /** 某位读者当前未归还的借阅记录，按应还时间升序。 */
+    @Transactional(readOnly = true)
+    public List<Loan> activeByReader(Long readerId) {
+        return loans.findByReaderIdAndStatusOrderByDueAtAsc(readerId, LoanStatus.BORROWED);
+    }
+
+    /** 某位读者已归还的借阅历史，按归还时间倒序。 */
+    @Transactional(readOnly = true)
+    public Page<Loan> historyByReader(Long readerId, int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size);
+        return loans.findByReaderIdAndStatusOrderByReturnedAtDesc(readerId, LoanStatus.RETURNED, pageable);
     }
 }

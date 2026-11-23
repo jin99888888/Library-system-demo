@@ -408,3 +408,35 @@ a {
     font-weight: 600;
     margin: 26px 0 12px;
 }
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px 24px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.info-item .label {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.info-item .value {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.table td a {
+    font-weight: 500;
+}

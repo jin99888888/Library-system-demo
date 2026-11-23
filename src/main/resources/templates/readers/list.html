@@ -31,8 +31,8 @@
         </thead>
         <tbody>
         <tr th:each="reader : ${page.content}">
-            <td th:text="${reader.cardNo}"></td>
-            <td th:text="${reader.name}"></td>
+            <td><a th:href="@{/readers/{id}(id=${reader.id})}" th:text="${reader.cardNo}"></a></td>
+            <td><a th:href="@{/readers/{id}(id=${reader.id})}" th:text="${reader.name}"></a></td>
             <td th:text="${reader.phone ?: '—'}"></td>
             <td>
                 <span class="badge" th:classappend="${reader.active} ? ' ok' : ' muted'"

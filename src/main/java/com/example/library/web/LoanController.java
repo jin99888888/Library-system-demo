@@ -69,13 +69,23 @@ public class LoanController {
     }
 
     @PostMapping("/{id}/return")
-    public String returnLoan(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String returnLoan(@PathVariable Long id,
+                             @RequestParam(required = false) String returnTo,
+                             RedirectAttributes redirectAttributes) {
         try {
             loans.returnLoan(id);
             redirectAttributes.addFlashAttribute("msg", "还书成功");
         } catch (BusinessException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/loans";
+        return "redirect:" + safeReturnPath(returnTo);
+    }
+
+    /** 只允许回到本站的图书/读者详情页，避免开放重定向。 */
+    private String safeReturnPath(String returnTo) {
+        if (returnTo != null && (returnTo.startsWith("/books/") || returnTo.startsWith("/readers/"))) {
+            return returnTo;
+        }
+        return "/loans";
     }
 }

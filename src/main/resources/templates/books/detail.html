@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/layout :: head(${book.title})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: nav('books')}"></header>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1 th:text="${book.title}">书名</h1>
+            <p class="hint" th:text="|${book.author} 著|"></p>
+        </div>
+        <div class="page-actions">
+            <a class="btn" th:href="@{/books/{id}/edit(id=${book.id})}">编辑</a>
+            <a class="btn ghost" th:href="@{/books}">返回图书列表</a>
+        </div>
+    </div>
+
+    <div class="alert ok" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert err" th:if="${error}" th:text="${error}"></div>
+
+    <div class="card">
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">ISBN</span>
+                <span class="value" th:text="${book.isbn ?: '—'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">分类</span>
+                <span class="value" th:text="${book.category ?: '—'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">出版社</span>
+                <span class="value" th:text="${book.publisher ?: '—'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">馆藏位置</span>
+                <span class="value" th:text="${book.location ?: '—'}"></span>
+            </div>
+            <div class="info-item">
+                <span class="label">册数（可借 / 共）</span>
+                <span class="value">
+                    <span class="badge" th:classappend="${book.availableCopies == 0} ? ' warn'"
+                          th:text="|${book.availableCopies} / ${book.totalCopies}|"></span>
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="label">在借册数</span>
+                <span class="value" th:text="${book.borrowedCopies}"></span>
+            </div>
+        </div>
+        <div class="form-actions" style="margin-top:18px">
+            <a class="btn primary" th:href="@{/loans/new(bookId=${book.id})}"
+               th:if="${book.availableCopies > 0}">借出这本书</a>
+            <span class="hint" th:if="${book.availableCopies == 0}">当前无可借册数，归还后即可借出。</span>
+        </div>
+    </div>
+
+    <h2 class="section-title" th:text="|在借中（${#lists.size(activeLoans)}）|">在借中</h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>读者</th>
+            <th>借出时间</th>
+            <th>应还时间</th>
+            <th>状态</th>
+            <th class="actions">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="loan : ${activeLoans}">
+            <td>
+                <a th:href="@{/readers/{id}(id=${loan.reader.id})}"
+                   th:text="|${loan.reader.name}（${loan.reader.cardNo}）|"></a>
+            </td>
+            <td th:text="${loan.borrowedAtText}"></td>
+            <td th:text="${loan.dueAtText}"></td>
+            <td>
+                <span class="badge warn" th:if="${loan.overdue}" th:text="|逾期 ${loan.overdueDays} 天|"></span>
+                <span class="badge" th:unless="${loan.overdue}">在借</span>
+            </td>
+            <td class="actions">
+                <form class="inline" method="post" th:action="@{/loans/{id}/return(id=${loan.id})}">
+                    <input type="hidden" name="returnTo" th:value="|/books/${book.id}|">
+                    <button class="btn sm" type="submit">还书</button>
+                </form>
+            </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(activeLoans)}">
+            <td colspan="5" class="empty">这本书当前全部在馆，没有外借。</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2 class="section-title" th:text="|借阅历史（${history.totalElements} 条）|">借阅历史</h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>读者</th>
+            <th>借出时间</th>
+            <th>应还时间</th>
+            <th>归还时间</th>
+            <th>状态</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="loan : ${history.content}">
+            <td>
+                <a th:href="@{/readers/{id}(id=${loan.reader.id})}"
+                   th:text="|${loan.reader.name}（${loan.reader.cardNo}）|"></a>
+            </td>
+            <td th:text="${loan.borrowedAtText}"></td>
+            <td th:text="${loan.dueAtText}"></td>
+            <td th:text="${loan.returnedAtText}"></td>
+            <td>
+                <span class="badge ok" th:if="${!loan.overdue}">按时归还</span>
+                <span class="badge warn" th:if="${loan.overdue}" th:text="|逾期归还 ${loan.overdueDays} 天|"></span>
+            </td>
+        </tr>
+        <tr th:if="${history.totalElements == 0}">
+            <td colspan="5" class="empty">还没有归还记录。</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="pager" th:if="${history.totalPages > 1}">
+        <a class="btn sm" th:if="${history.hasPrevious}"
+           th:href="@{/books/{id}(id=${book.id},page=${history.number - 1})}">上一页</a>
+        <span th:text="|第 ${history.number + 1} / ${history.totalPages} 页，共 ${history.totalElements} 条|"></span>
+        <a class="btn sm" th:if="${history.hasNext}"
+           th:href="@{/books/{id}(id=${book.id},page=${history.number + 1})}">下一页</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

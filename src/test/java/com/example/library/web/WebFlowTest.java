@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -198,5 +200,108 @@ class WebFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("readers/list"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("赵六")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("图书详情页展示在借读者、逾期历史，并支持还书后回到详情页")
+    void bookDetailShowsActiveAndHistory() throws Exception {
+        LocalDateTime base = LocalDateTime.now().withNano(0);
+
+        Book book = new Book();
+        book.setTitle("详情页图书");
+        book.setAuthor("作者甲");
+        book.setTotalCopies(2);
+        book.setAvailableCopies(1);
+        book = books.save(book);
+
+        com.example.library.domain.Reader activeReader = new com.example.library.domain.Reader();
+        activeReader.setCardNo("R-3001");
+        activeReader.setName("在借读者");
+        activeReader = readers.save(activeReader);
+
+        com.example.library.domain.Reader historyReader = new com.example.library.domain.Reader();
+        historyReader.setCardNo("R-3002");
+        historyReader.setName("历史读者");
+        historyReader = readers.save(historyReader);
+
+        Loan active = new Loan();
+        active.setBook(book);
+        active.setReader(activeReader);
+        active.setBorrowedAt(base.minusDays(3));
+        active.setDueAt(base.plusDays(27));
+        active = loans.save(active);
+
+        Loan returned = new Loan();
+        returned.setBook(book);
+        returned.setReader(historyReader);
+        returned.setBorrowedAt(base.minusDays(40));
+        returned.setDueAt(base.minusDays(10));
+        returned.setReturnedAt(base.minusDays(8));
+        returned.setStatus(LoanStatus.RETURNED);
+        loans.save(returned);
+
+        mvc.perform(get("/books/" + book.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("books/detail"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("在借中（1）")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("在借读者")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("历史读者")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("逾期归还 2 天")));
+
+        mvc.perform(post("/loans/" + active.getId() + "/return").with(csrf())
+                        .param("returnTo", "/books/" + book.getId()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/books/" + book.getId()))
+                .andExpect(flash().attribute("msg", "还书成功"));
+
+        assertThat(books.findById(book.getId()).orElseThrow().getAvailableCopies()).isEqualTo(2);
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("读者详情页展示在借图书与剩余可借额度")
+    void readerDetailShowsBorrowingAndQuota() throws Exception {
+        Book book = new Book();
+        book.setTitle("读者详情借阅书");
+        book.setAuthor("作者乙");
+        book.setTotalCopies(1);
+        book.setAvailableCopies(0);
+        book = books.save(book);
+
+        com.example.library.domain.Reader reader = new com.example.library.domain.Reader();
+        reader.setCardNo("R-3003");
+        reader.setName("详情读者");
+        reader.setMaxBorrow(5);
+        reader = readers.save(reader);
+
+        Loan loan = new Loan();
+        loan.setBook(book);
+        loan.setReader(reader);
+        loan.setBorrowedAt(LocalDateTime.now().minusDays(1));
+        loan.setDueAt(LocalDateTime.now().plusDays(29));
+        loans.save(loan);
+
+        mvc.perform(get("/readers/" + reader.getId()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("readers/detail"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("详情读者")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("1 / 4")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("读者详情借阅书")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("访问不存在的图书或读者详情时显示业务错误页")
+    void detailOfMissingEntityShowsBusinessError() throws Exception {
+        mvc.perform(get("/books/999999"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error/business"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("图书不存在")));
+
+        mvc.perform(get("/readers/999999"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error/business"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("读者不存在")));
     }
 }

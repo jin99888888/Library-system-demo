@@ -34,6 +34,22 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     @EntityGraph(attributePaths = {"book", "reader"})
     List<Loan> findTop5ByStatusAndDueAtBeforeOrderByDueAtAsc(LoanStatus status, LocalDateTime now);
 
+    @EntityGraph(attributePaths = {"book", "reader"})
+    List<Loan> findByBookIdAndStatusOrderByDueAtAsc(Long bookId, LoanStatus status);
+
+    @EntityGraph(attributePaths = {"book", "reader"})
+    Page<Loan> findByBookIdAndStatusOrderByReturnedAtDesc(Long bookId,
+                                                         LoanStatus status,
+                                                         Pageable pageable);
+
+    @EntityGraph(attributePaths = {"book", "reader"})
+    List<Loan> findByReaderIdAndStatusOrderByDueAtAsc(Long readerId, LoanStatus status);
+
+    @EntityGraph(attributePaths = {"book", "reader"})
+    Page<Loan> findByReaderIdAndStatusOrderByReturnedAtDesc(Long readerId,
+                                                           LoanStatus status,
+                                                           Pageable pageable);
+
     long countByStatus(LoanStatus status);
 
     long countByStatusAndDueAtBefore(LoanStatus status, LocalDateTime now);

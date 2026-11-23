@@ -33,8 +33,11 @@
         </thead>
         <tbody>
         <tr th:each="loan : ${page.content}">
-            <td th:text="${loan.book.title}"></td>
-            <td th:text="|${loan.reader.name}（${loan.reader.cardNo}）|"></td>
+            <td><a th:href="@{/books/{id}(id=${loan.book.id})}" th:text="${loan.book.title}"></a></td>
+            <td>
+                <a th:href="@{/readers/{id}(id=${loan.reader.id})}"
+                   th:text="|${loan.reader.name}（${loan.reader.cardNo}）|"></a>
+            </td>
             <td th:text="${loan.borrowedAtText}"></td>
             <td th:text="${loan.dueAtText}"></td>
             <td th:text="${loan.returnedAtText}"></td>

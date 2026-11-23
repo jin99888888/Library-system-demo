@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.library.domain.Book;
 import com.example.library.service.BookService;
+import com.example.library.service.LoanService;
 
 import jakarta.validation.Valid;
 
@@ -23,9 +24,11 @@ public class BookController {
     private static final int PAGE_SIZE = 10;
 
     private final BookService books;
+    private final LoanService loans;
 
-    public BookController(BookService books) {
+    public BookController(BookService books, LoanService loans) {
         this.books = books;
+        this.loans = loans;
     }
 
     @GetMapping
@@ -41,6 +44,16 @@ public class BookController {
     public String createForm(Model model) {
         model.addAttribute("book", new Book());
         return "books/form";
+    }
+
+    @GetMapping("/{id}")
+    public String detail(@PathVariable Long id,
+                         @RequestParam(defaultValue = "0") int page,
+                         Model model) {
+        model.addAttribute("book", books.get(id));
+        model.addAttribute("activeLoans", loans.activeByBook(id));
+        model.addAttribute("history", loans.historyByBook(id, page, PAGE_SIZE));
+        return "books/detail";
     }
 
     @PostMapping

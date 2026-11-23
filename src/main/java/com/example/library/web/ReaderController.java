@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.library.domain.Reader;
 import com.example.library.domain.ReaderStatus;
+import com.example.library.service.LoanService;
 import com.example.library.service.ReaderService;
 
 import jakarta.validation.Valid;
@@ -24,9 +25,11 @@ public class ReaderController {
     private static final int PAGE_SIZE = 10;
 
     private final ReaderService readers;
+    private final LoanService loans;
 
-    public ReaderController(ReaderService readers) {
+    public ReaderController(ReaderService readers, LoanService loans) {
         this.readers = readers;
+        this.loans = loans;
     }
 
     @GetMapping
@@ -43,6 +46,20 @@ public class ReaderController {
         model.addAttribute("reader", new Reader());
         model.addAttribute("statuses", ReaderStatus.values());
         return "readers/form";
+    }
+
+    @GetMapping("/{id}")
+    public String detail(@PathVariable Long id,
+                         @RequestParam(defaultValue = "0") int page,
+                         Model model) {
+        Reader reader = readers.get(id);
+        var activeLoans = loans.activeByReader(id);
+        model.addAttribute("reader", reader);
+        model.addAttribute("activeLoans", activeLoans);
+        model.addAttribute("activeCount", activeLoans.size());
+        model.addAttribute("remaining", Math.max(0, reader.getMaxBorrow() - activeLoans.size()));
+        model.addAttribute("history", loans.historyByReader(id, page, PAGE_SIZE));
+        return "readers/detail";
     }
 
     @PostMapping
