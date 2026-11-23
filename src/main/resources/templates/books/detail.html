@@ -18,41 +18,54 @@
     <div class="alert ok" th:if="${msg}" th:text="${msg}"></div>
     <div class="alert err" th:if="${error}" th:text="${error}"></div>
 
-    <div class="card">
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="label">ISBN</span>
-                <span class="value" th:text="${book.isbn ?: '—'}"></span>
+    <div class="card book-hero">
+        <div class="cover" th:if="${book.coverPath}">
+            <img th:src="${book.coverPath}" th:alt="|${book.title} 封面|">
+        </div>
+        <div class="cover placeholder" th:unless="${book.coverPath}">
+            <span th:text="${#strings.substring(book.title, 0, 1)}">书</span>
+        </div>
+        <div class="book-hero-main">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">ISBN</span>
+                    <span class="value" th:text="${book.isbn ?: '—'}"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">分类</span>
+                    <span class="value" th:text="${book.category ?: '—'}"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">出版社</span>
+                    <span class="value" th:text="${book.publisher ?: '—'}"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">馆藏位置</span>
+                    <span class="value" th:text="${book.location ?: '—'}"></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">册数（可借 / 共）</span>
+                    <span class="value">
+                        <span class="badge" th:classappend="${book.availableCopies == 0} ? ' warn'"
+                              th:text="|${book.availableCopies} / ${book.totalCopies}|"></span>
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="label">在借册数</span>
+                    <span class="value" th:text="${book.borrowedCopies}"></span>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="label">分类</span>
-                <span class="value" th:text="${book.category ?: '—'}"></span>
-            </div>
-            <div class="info-item">
-                <span class="label">出版社</span>
-                <span class="value" th:text="${book.publisher ?: '—'}"></span>
-            </div>
-            <div class="info-item">
-                <span class="label">馆藏位置</span>
-                <span class="value" th:text="${book.location ?: '—'}"></span>
-            </div>
-            <div class="info-item">
-                <span class="label">册数（可借 / 共）</span>
-                <span class="value">
-                    <span class="badge" th:classappend="${book.availableCopies == 0} ? ' warn'"
-                          th:text="|${book.availableCopies} / ${book.totalCopies}|"></span>
-                </span>
-            </div>
-            <div class="info-item">
-                <span class="label">在借册数</span>
-                <span class="value" th:text="${book.borrowedCopies}"></span>
+            <div class="form-actions" style="margin-top:18px">
+                <a class="btn primary" th:href="@{/loans/new(bookId=${book.id})}"
+                   th:if="${book.availableCopies > 0}">借出这本书</a>
+                <span class="hint" th:if="${book.availableCopies == 0}">当前无可借册数，归还后即可借出。</span>
             </div>
         </div>
-        <div class="form-actions" style="margin-top:18px">
-            <a class="btn primary" th:href="@{/loans/new(bookId=${book.id})}"
-               th:if="${book.availableCopies > 0}">借出这本书</a>
-            <span class="hint" th:if="${book.availableCopies == 0}">当前无可借册数，归还后即可借出。</span>
-        </div>
+    </div>
+
+    <h2 class="section-title" th:if="${!#strings.isEmpty(book.description)}">简介</h2>
+    <div class="card book-desc" th:if="${!#strings.isEmpty(book.description)}">
+        <p th:text="${book.description}"></p>
     </div>
 
     <h2 class="section-title" th:text="|在借中（${#lists.size(activeLoans)}）|">在借中</h2>

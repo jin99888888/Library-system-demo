@@ -10,8 +10,9 @@
     </div>
 
     <div class="card">
-        <form class="form" method="post" th:object="${book}"
+        <form class="form" method="post" enctype="multipart/form-data" th:object="${book}"
               th:action="${book.id == null} ? @{/books} : @{/books/{id}(id=${book.id})}">
+            <input type="hidden" th:field="*{coverPath}">
             <label>书名 <span class="req">*</span>
                 <input type="text" th:field="*{title}" maxlength="200" required>
                 <span class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></span>
@@ -39,6 +40,29 @@
                 <span class="hint" th:if="${book.id != null}"
                       th:text="|当前已借出 ${book.borrowedCopies} 册，总册数不能小于已借出册数|"></span>
             </label>
+
+            <div class="field-block">
+                <span class="field-label">封面</span>
+                <div class="cover-pick">
+                    <img class="cover-thumb lg" th:if="${book.coverPath}" th:src="${book.coverPath}" alt="当前封面">
+                    <div class="cover placeholder small" th:unless="${book.coverPath}">暂无封面</div>
+                    <div class="cover-pick-main">
+                        <input type="file" name="cover" accept="image/png,image/jpeg,image/gif,image/webp">
+                        <span class="hint">支持 PNG / JPG / GIF / WEBP，不超过 2 MB；不选择文件则保留原封面。</span>
+                        <label class="checkbox" th:if="${book.coverPath}">
+                            <input type="checkbox" name="removeCover" value="true"> 移除当前封面
+                        </label>
+                        <span class="field-error" th:if="${coverError}" th:text="${coverError}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <label>简介
+                <textarea th:field="*{description}" rows="5" maxlength="1000"
+                          placeholder="简要介绍这本书的内容、适合的读者等（选填）"></textarea>
+                <span class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span>
+            </label>
+
             <div class="form-actions">
                 <button class="btn primary" type="submit">保存</button>
                 <a class="btn" th:href="@{/books}">取消</a>

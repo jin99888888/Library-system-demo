@@ -13,6 +13,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.community.dialect.SQLiteDialect
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 3MB
   thymeleaf:
     cache: false
 
@@ -25,6 +29,8 @@ library:
   admin:
     username: admin
     password: admin123
+  # 图书封面的本地保存目录，页面通过 /covers/** 访问
+  cover-dir: data/covers
   seed:
     # 首次启动时导入 40 本示例图书（只执行一次，已有图书按 ISBN 去重保留）
     books: true

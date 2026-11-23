@@ -9,10 +9,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.library.domain.Book;
 import com.example.library.service.BookService;
+import com.example.library.service.BusinessException;
+import com.example.library.service.CoverStorage;
 import com.example.library.service.LoanService;
 
 import jakarta.validation.Valid;
@@ -25,10 +28,12 @@ public class BookController {
 
     private final BookService books;
     private final LoanService loans;
+    private final CoverStorage covers;
 
-    public BookController(BookService books, LoanService loans) {
+    public BookController(BookService books, LoanService loans, CoverStorage covers) {
         this.books = books;
         this.loans = loans;
+        this.covers = covers;
     }
 
     @GetMapping
@@ -67,8 +72,16 @@ public class BookController {
     @PostMapping
     public String create(@Valid @ModelAttribute("book") Book book,
                          BindingResult binding,
+                         @RequestParam(value = "cover", required = false) MultipartFile cover,
+                         Model model,
                          RedirectAttributes redirectAttributes) {
         if (binding.hasErrors()) {
+            return "books/form";
+        }
+        try {
+            book.setCoverPath(covers.save(cover));
+        } catch (BusinessException e) {
+            model.addAttribute("coverError", e.getMessage());
             return "books/form";
         }
         books.create(book);
@@ -86,9 +99,31 @@ public class BookController {
     public String update(@PathVariable Long id,
                          @Valid @ModelAttribute("book") Book book,
                          BindingResult binding,
+                         @RequestParam(value = "cover", required = false) MultipartFile cover,
+                         @RequestParam(value = "removeCover", defaultValue = "false") boolean removeCover,
+                         Model model,
                          RedirectAttributes redirectAttributes) {
+        Book current = books.get(id);
         if (binding.hasErrors()) {
             book.setId(id);
+            book.setCoverPath(current.getCoverPath());
+            return "books/form";
+        }
+        try {
+            String uploaded = covers.save(cover);
+            if (uploaded != null) {
+                covers.delete(current.getCoverPath());
+                book.setCoverPath(uploaded);
+            } else if (removeCover) {
+                covers.delete(current.getCoverPath());
+                book.setCoverPath(null);
+            } else {
+                book.setCoverPath(current.getCoverPath());
+            }
+        } catch (BusinessException e) {
+            book.setId(id);
+            book.setCoverPath(current.getCoverPath());
+            model.addAttribute("coverError", e.getMessage());
             return "books/form";
         }
         books.update(id, book);
@@ -98,7 +133,9 @@ public class BookController {
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        String cover = books.get(id).getCoverPath();
         books.delete(id);
+        covers.delete(cover);
         redirectAttributes.addFlashAttribute("msg", "已删除图书");
         return "redirect:/books";
     }

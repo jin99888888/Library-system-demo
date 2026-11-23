@@ -3,6 +3,7 @@ package com.example.library.web;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ import com.example.library.domain.LoanStatus;
 import com.example.library.repository.BookRepository;
 import com.example.library.repository.LoanRepository;
 import com.example.library.repository.ReaderRepository;
+import com.example.library.service.CoverStorage;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -46,6 +50,9 @@ class WebFlowTest {
 
     @Autowired
     private LoanRepository loans;
+
+    @Autowired
+    private CoverStorage covers;
 
     @Test
     @DisplayName("未登录访问首页会跳转到登录页")
@@ -223,13 +230,13 @@ class WebFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("books/list"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "第 1 / " + pages + " 页，共 " + total + " 种")))
+                        "第 1 / " + pages + " 页")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("下一页")));
 
         mvc.perform(get("/books").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "第 2 / " + pages + " 页，共 " + total + " 种")))
+                        "第 2 / " + pages + " 页")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("上一页")));
     }
 
@@ -298,15 +305,15 @@ class WebFlowTest {
 
         mvc.perform(get("/books").param("jump", "2"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页，共 12 种")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页")));
 
         mvc.perform(get("/books").param("jump", "99"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页，共 12 种")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页")));
 
         mvc.perform(get("/books").param("jump", "0"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 1 / 2 页，共 12 种")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 1 / 2 页")));
     }
 
     @Test
@@ -379,6 +386,106 @@ class WebFlowTest {
                 .andExpect(redirectedUrl("/loans/new"))
                 .andExpect(flash().attribute("error",
                         org.hamcrest.Matchers.containsString("逾期")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("图书详情页展示简介；没有封面时显示占位封面")
+    void bookDetailShowsDescriptionAndCoverPlaceholder() throws Exception {
+        Book book = new Book();
+        book.setTitle("朝花夕拾");
+        book.setAuthor("鲁迅");
+        book.setTotalCopies(1);
+        book.setAvailableCopies(1);
+        book.setDescription("回忆童年与青年时代的散文集。");
+        book = books.save(book);
+
+        mvc.perform(get("/books/" + book.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(">简介<")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("回忆童年与青年时代的散文集。")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("cover placeholder")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("新增图书时可以上传封面并保存简介")
+    void createBookWithCoverUpload() throws Exception {
+        MockMultipartFile cover = new MockMultipartFile("cover", "cover.png", "image/png",
+                new byte[] {(byte) 0x89, 'P', 'N', 'G', 9, 9});
+
+        mvc.perform(multipart("/books").file(cover).with(csrf())
+                        .param("title", "封面上传图书")
+                        .param("author", "上传作者")
+                        .param("totalCopies", "1")
+                        .param("description", "上传封面时填写的简介"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/books"));
+
+        Book created = books.findAll(org.springframework.data.domain.PageRequest.of(0, 1,
+                        org.springframework.data.domain.Sort.by(
+                                org.springframework.data.domain.Sort.Direction.DESC, "id")))
+                .getContent().get(0);
+
+        assertThat(created.getTitle()).isEqualTo("封面上传图书");
+        assertThat(created.getDescription()).isEqualTo("上传封面时填写的简介");
+        assertThat(created.getCoverPath()).startsWith(CoverStorage.URL_PREFIX);
+
+        java.nio.file.Path saved = covers.getRoot()
+                .resolve(created.getCoverPath().substring(CoverStorage.URL_PREFIX.length()));
+        assertThat(Files.exists(saved)).isTrue();
+
+        mvc.perform(get("/books/" + created.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(created.getCoverPath())))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("上传封面时填写的简介")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("cover placeholder"))));
+
+        covers.delete(created.getCoverPath());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("上传非图片文件时回到表单并提示格式问题")
+    void uploadInvalidCoverShowsError() throws Exception {
+        MockMultipartFile text = new MockMultipartFile("cover", "note.txt", "text/plain", "not an image".getBytes());
+
+        mvc.perform(multipart("/books").file(text).with(csrf())
+                        .param("title", "错误封面的图书")
+                        .param("author", "某个作者")
+                        .param("totalCopies", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("books/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("封面只支持")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("编辑图书时可以移除已有封面")
+    void updateBookCanRemoveCover() throws Exception {
+        Book book = new Book();
+        book.setTitle("有封面的书");
+        book.setAuthor("作者");
+        book.setTotalCopies(1);
+        book.setAvailableCopies(1);
+        book.setCoverPath(CoverStorage.URL_PREFIX + "keep.png");
+        book = books.save(book);
+
+        java.nio.file.Path saved = covers.getRoot().resolve("keep.png");
+        Files.write(saved, new byte[] {1, 2, 3});
+
+        mvc.perform(multipart("/books/" + book.getId()).with(csrf())
+                        .param("title", "有封面的书")
+                        .param("author", "作者")
+                        .param("totalCopies", "1")
+                        .param("coverPath", CoverStorage.URL_PREFIX + "keep.png")
+                        .param("removeCover", "true"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/books"));
+
+        assertThat(books.findById(book.getId()).orElseThrow().getCoverPath()).isNull();
+        assertThat(Files.exists(saved)).isFalse();
     }
 
     private void saveBook(String title, String category) {

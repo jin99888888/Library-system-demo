@@ -2,7 +2,9 @@ package com.example.library.config;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ public class BookSeeder {
     @Transactional
     public int seedIfNeeded() {
         if (settings.existsById(SEEDED_KEY)) {
+            backfillDescriptions();
             return 0;
         }
         Set<String> existingIsbns = new HashSet<>();
@@ -59,6 +62,27 @@ public class BookSeeder {
         }
         settings.save(new AppSetting(SEEDED_KEY, String.valueOf(missing.size())));
         log.info("示例图书导入完成：新增 {} 本（已有 {} 本，按 ISBN 去重）", missing.size(), existingIsbns.size());
+        backfillDescriptions();
         return missing.size();
+    }
+
+    /**
+     * 为早期导入、还没有简介的示例图书补上简介（只填空值，不覆盖用户自己填写的内容）。
+     */
+    private void backfillDescriptions() {
+        Map<String, String> descriptions = DemoBooks.all().stream()
+                .filter(book -> book.getDescription() != null && !book.getDescription().isBlank())
+                .collect(Collectors.toMap(Book::getIsbn, Book::getDescription, (a, b) -> a));
+        int filled = 0;
+        for (Book book : books.findAll()) {
+            String description = descriptions.get(book.getIsbn());
+            if (description != null && (book.getDescription() == null || book.getDescription().isBlank())) {
+                book.setDescription(description);
+                filled++;
+            }
+        }
+        if (filled > 0) {
+            log.info("示例图书简介补全：{} 本", filled);
+        }
     }
 }

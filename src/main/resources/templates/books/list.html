@@ -46,7 +46,10 @@
         </thead>
         <tbody>
         <tr th:each="book : ${page.content}">
-            <td><a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}"></a></td>
+            <td class="title-cell">
+                <img class="cover-thumb" th:if="${book.coverPath}" th:src="${book.coverPath}" alt="">
+                <a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}"></a>
+            </td>
             <td th:text="${book.author}"></td>
             <td th:text="${book.isbn ?: '—'}"></td>
             <td th:text="${book.category ?: '—'}"></td>
@@ -73,7 +76,7 @@
     <div class="pager" th:if="${page.totalPages > 1}">
         <a class="btn sm" th:if="${page.hasPrevious}"
            th:href="@{/books(q=${q},category=${category},page=${page.number - 1})}">上一页</a>
-        <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页，共 ${page.totalElements} 种|"></span>
+        <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页|"></span>
         <a class="btn sm" th:if="${page.hasNext}"
            th:href="@{/books(q=${q},category=${category},page=${page.number + 1})}">下一页</a>
         <form class="pager-jump" method="get" th:action="@{/books}">

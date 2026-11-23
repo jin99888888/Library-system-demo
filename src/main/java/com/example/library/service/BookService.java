@@ -93,6 +93,8 @@ public class BookService {
         book.setCategory(form.getCategory());
         book.setPublisher(form.getPublisher());
         book.setLocation(form.getLocation());
+        book.setDescription(form.getDescription());
+        book.setCoverPath(form.getCoverPath());
         book.setTotalCopies(form.getTotalCopies());
         book.setAvailableCopies(form.getTotalCopies() - borrowed);
         return books.save(book);

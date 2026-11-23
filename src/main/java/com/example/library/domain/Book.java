@@ -49,6 +49,15 @@ public class Book {
     @Column(length = 50)
     private String location;
 
+    @Size(max = 1000)
+    @Column(length = 2000)
+    private String description;
+
+    /** 封面图片的访问路径，如 /covers/xxx.png；为空表示没有封面。 */
+    @Size(max = 300)
+    @Column(length = 300)
+    private String coverPath;
+
     @Min(1)
     @Column(nullable = false)
     private int totalCopies = 1;
@@ -136,6 +145,22 @@ public class Book {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getCoverPath() {
+        return coverPath;
+    }
+
+    public void setCoverPath(String coverPath) {
+        this.coverPath = coverPath;
     }
 
     public int getTotalCopies() {
