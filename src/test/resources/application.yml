@@ -10,6 +10,7 @@ spring:
     open-in-view: false
 
 library:
+  version: 0.7.0
   loan:
     period-days: 30
   admin:

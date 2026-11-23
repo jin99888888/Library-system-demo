@@ -54,6 +54,9 @@ class WebFlowTest {
     @Autowired
     private CoverStorage covers;
 
+    @org.springframework.beans.factory.annotation.Value("${library.version:0.1.0}")
+    private String appVersion;
+
     @Test
     @DisplayName("未登录访问首页会跳转到登录页")
     void anonymousIsRedirectedToLogin() throws Exception {
@@ -68,7 +71,8 @@ class WebFlowTest {
         mvc.perform(get("/login"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("图书管理系统")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("图书管理系统")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("v" + appVersion)));
     }
 
     @Test

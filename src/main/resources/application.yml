@@ -24,6 +24,8 @@ server:
   port: 8080
 
 library:
+  # 系统版本号（用于页面页脚展示），每次功能迭代递增，需与 pom.xml 中的 version 保持一致
+  version: 0.7.0
   loan:
     period-days: 30
   admin:

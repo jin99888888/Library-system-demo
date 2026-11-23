@@ -529,9 +529,29 @@ a.stat:hover::after {
 /* ---------- 封面与简介 ---------- */
 
 .title-cell {
-    display: flex;
+    white-space: nowrap;
+}
+
+.table th.title-head {
+    padding-left: 50px;
+}
+
+.title-wrap {
+    display: inline-flex;
     align-items: center;
     gap: 10px;
+    min-height: 36px;
+    vertical-align: middle;
+}
+
+.title-wrap a {
+    line-height: 1.4;
+}
+
+.cover-slot {
+    width: 26px;
+    height: 36px;
+    flex: none;
 }
 
 .cover-thumb {

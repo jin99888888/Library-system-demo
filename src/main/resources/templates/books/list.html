@@ -35,7 +35,7 @@
     <table class="table">
         <thead>
         <tr>
-            <th>书名</th>
+            <th class="title-head">书名</th>
             <th>作者</th>
             <th>ISBN</th>
             <th>分类</th>
@@ -47,8 +47,11 @@
         <tbody>
         <tr th:each="book : ${page.content}">
             <td class="title-cell">
-                <img class="cover-thumb" th:if="${book.coverPath}" th:src="${book.coverPath}" alt="">
-                <a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}"></a>
+                <span class="title-wrap">
+                    <img class="cover-thumb" th:if="${book.coverPath}" th:src="${book.coverPath}" alt="">
+                    <span class="cover-slot" th:unless="${book.coverPath}"></span>
+                    <a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}"></a>
+                </span>
             </td>
             <td th:text="${book.author}"></td>
             <td th:text="${book.isbn ?: '—'}"></td>
