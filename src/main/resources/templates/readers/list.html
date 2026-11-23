@@ -35,7 +35,9 @@
             <td><a th:href="@{/readers/{id}(id=${reader.id})}" th:text="${reader.name}"></a></td>
             <td th:text="${reader.phone ?: '—'}"></td>
             <td>
-                <span class="badge" th:classappend="${reader.active} ? ' ok' : ' muted'"
+                <span class="badge warn" th:if="${overdueReaderIds.contains(reader.id)}">逾期</span>
+                <span class="badge" th:unless="${overdueReaderIds.contains(reader.id)}"
+                      th:classappend="${reader.active} ? ' ok' : ' muted'"
                       th:text="${reader.active} ? '正常' : '停用'"></span>
             </td>
             <td th:text="${reader.maxBorrow}"></td>

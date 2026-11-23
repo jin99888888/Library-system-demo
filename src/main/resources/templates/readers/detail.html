@@ -31,7 +31,9 @@
             <div class="info-item">
                 <span class="label">状态</span>
                 <span class="value">
-                    <span class="badge" th:classappend="${reader.active} ? ' ok' : ' muted'"
+                    <span class="badge warn" th:if="${overdue}">逾期</span>
+                    <span class="badge" th:unless="${overdue}"
+                          th:classappend="${reader.active} ? ' ok' : ' muted'"
                           th:text="${reader.active} ? '正常' : '停用'"></span>
                 </span>
             </div>
@@ -50,9 +52,10 @@
         </div>
         <div class="form-actions" style="margin-top:18px">
             <a class="btn primary" th:href="@{/loans/new(readerId=${reader.id})}"
-               th:if="${reader.active and remaining > 0}">给这位读者借书</a>
+               th:if="${reader.active and !overdue and remaining > 0}">给这位读者借书</a>
             <span class="hint" th:if="${!reader.active}">读者已停用，不能借书。</span>
-            <span class="hint" th:if="${reader.active and remaining == 0}">已达借阅上限，请先归还部分图书。</span>
+            <span class="hint warn-text" th:if="${reader.active and overdue}">该读者有逾期未还的图书，归还前不能借书。</span>
+            <span class="hint" th:if="${reader.active and !overdue and remaining == 0}">已达借阅上限，请先归还部分图书。</span>
         </div>
     </div>
 

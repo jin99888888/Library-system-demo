@@ -26,8 +26,8 @@ public class DashboardService {
         this.loans = loans;
     }
 
-    public long bookTitles() {
-        return books.count();
+    public long categoryCount() {
+        return books.countCategories();
     }
 
     public long totalCopies() {

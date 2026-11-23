@@ -309,6 +309,78 @@ class WebFlowTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("第 1 / 2 页，共 12 种")));
     }
 
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("概览按分类统计书目种类，并可从统计卡跳转")
+    void dashboardShowsCategoryCountAndJumpLinks() throws Exception {
+        books.deleteAll();
+        saveBook("甲", "文学");
+        saveBook("乙", "科幻");
+        saveBook("丙", "科幻");
+
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("index"))
+                .andExpect(model().attribute("categoryCount", 2L))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/books\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("href=\"/readers\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("status=BORROWED")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("status=OVERDUE")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("读者有逾期未还图书时，列表与详情显示逾期，且借书表单禁用该读者")
+    void overdueReaderIsMarkedAndBlocked() throws Exception {
+        Book book = new Book();
+        book.setTitle("逾期示例");
+        book.setAuthor("作者丙");
+        book.setTotalCopies(1);
+        book.setAvailableCopies(0);
+        book = books.save(book);
+
+        com.example.library.domain.Reader reader = new com.example.library.domain.Reader();
+        reader.setCardNo("R-4101");
+        reader.setName("逾期读者");
+        reader = readers.save(reader);
+
+        Loan overdue = new Loan();
+        overdue.setBook(book);
+        overdue.setReader(reader);
+        overdue.setBorrowedAt(LocalDateTime.now().minusDays(40));
+        overdue.setDueAt(LocalDateTime.now().minusDays(5));
+        loans.save(overdue);
+
+        mvc.perform(get("/readers"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("R-4101")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(">逾期<")));
+
+        mvc.perform(get("/readers/" + reader.getId()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("该读者有逾期未还的图书，归还前不能借书。")));
+
+        Book free = new Book();
+        free.setTitle("可借新书");
+        free.setAuthor("作者丁");
+        free.setTotalCopies(1);
+        free.setAvailableCopies(1);
+        free = books.save(free);
+
+        mvc.perform(get("/loans/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("loans/form"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("有逾期，暂不可借")));
+
+        mvc.perform(post("/loans/borrow").with(csrf())
+                        .param("readerId", String.valueOf(reader.getId()))
+                        .param("bookId", String.valueOf(free.getId())))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/loans/new"))
+                .andExpect(flash().attribute("error",
+                        org.hamcrest.Matchers.containsString("逾期")));
+    }
+
     private void saveBook(String title, String category) {
         Book book = new Book();
         book.setTitle(title);

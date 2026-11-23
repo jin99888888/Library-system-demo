@@ -17,7 +17,7 @@ public class DashboardController {
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("bookTitles", dashboard.bookTitles());
+        model.addAttribute("categoryCount", dashboard.categoryCount());
         model.addAttribute("totalCopies", dashboard.totalCopies());
         model.addAttribute("readerCount", dashboard.readerCount());
         model.addAttribute("activeLoans", dashboard.activeLoanCount());

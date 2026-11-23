@@ -16,10 +16,14 @@
             <label>读者 <span class="req">*</span>
                 <select name="readerId" required>
                     <option value="">请选择读者</option>
-                    <option th:each="r : ${readers}" th:value="${r.id}"
+                    <option th:each="r : ${readers}" th:if="${!overdueReaderIds.contains(r.id)}" th:value="${r.id}"
                             th:text="|${r.name}（${r.cardNo}）|"
                             th:selected="${selectedReaderId != null and r.id == selectedReaderId}"></option>
+                    <option th:each="r : ${readers}" th:if="${overdueReaderIds.contains(r.id)}" th:value="${r.id}"
+                            disabled
+                            th:text="|${r.name}（${r.cardNo}）· 有逾期，暂不可借|"></option>
                 </select>
+                <span class="hint" th:if="${!#lists.isEmpty(overdueReaderIds)}">标记为「有逾期」的读者需先归还逾期图书才能继续借书。</span>
             </label>
             <label>图书 <span class="req">*</span>
                 <select name="bookId" required>

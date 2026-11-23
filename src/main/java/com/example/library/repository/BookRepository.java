@@ -37,6 +37,12 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     long sumTotalCopies();
 
     @Query("""
+            select count(distinct b.category) from Book b
+            where b.category is not null and b.category <> ''
+            """)
+    long countCategories();
+
+    @Query("""
             select b.category, count(b) from Book b
             where b.category is not null and b.category <> ''
             group by b.category

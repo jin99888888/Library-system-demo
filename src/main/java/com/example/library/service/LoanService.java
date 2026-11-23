@@ -47,6 +47,9 @@ public class LoanService {
         if (!reader.isActive()) {
             throw new BusinessException("读者「" + reader.getName() + "」已停用，不能借书");
         }
+        if (hasOverdue(readerId)) {
+            throw new BusinessException("读者「" + reader.getName() + "」有逾期未还的图书，请先归还后再借书");
+        }
         if (book.getAvailableCopies() <= 0) {
             throw new BusinessException("《" + book.getTitle() + "》已无可借册数");
         }
@@ -71,6 +74,18 @@ public class LoanService {
         loan.setDueAt(now.plusDays(loanPeriodDays));
         loan.setStatus(LoanStatus.BORROWED);
         return loans.save(loan);
+    }
+
+    /** 读者是否有逾期未还的借阅。 */
+    @Transactional(readOnly = true)
+    public boolean hasOverdue(Long readerId) {
+        return loans.countByReaderIdAndStatusAndDueAtBefore(readerId, LoanStatus.BORROWED, LocalDateTime.now()) > 0;
+    }
+
+    /** 有逾期未还记录的读者 id 集合，供读者列表展示「逾期」状态。 */
+    @Transactional(readOnly = true)
+    public List<Long> readersWithOverdue() {
+        return loans.findReaderIdsWithOverdue(LoanStatus.BORROWED, LocalDateTime.now());
     }
 
     @Transactional

@@ -48,6 +48,7 @@ public class LoanController {
                              Model model) {
         model.addAttribute("readers", readers.findActive());
         model.addAttribute("books", books.findAvailable());
+        model.addAttribute("overdueReaderIds", loans.readersWithOverdue());
         model.addAttribute("selectedReaderId", readerId);
         model.addAttribute("selectedBookId", bookId);
         return "loans/form";

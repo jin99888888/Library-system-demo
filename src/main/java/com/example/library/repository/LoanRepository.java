@@ -56,6 +56,16 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
     long countByReaderIdAndStatus(Long readerId, LoanStatus status);
 
+    long countByReaderIdAndStatusAndDueAtBefore(Long readerId, LoanStatus status, LocalDateTime now);
+
+    /** 有逾期未还记录的读者 id，用于读者列表的状态展示。 */
+    @Query("""
+            select distinct l.reader.id from Loan l
+            where l.status = :status and l.dueAt < :now
+            """)
+    List<Long> findReaderIdsWithOverdue(@Param("status") LoanStatus status,
+                                        @Param("now") LocalDateTime now);
+
     long countByReaderId(Long readerId);
 
     long countByBookId(Long bookId);

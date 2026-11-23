@@ -33,6 +33,9 @@ class LoanServiceTest {
     @Autowired
     private LoanService loans;
 
+    @Autowired
+    private com.example.library.repository.LoanRepository loanRepository;
+
     private Book newBook(String title, int copies) {
         Book book = new Book();
         book.setTitle(title);
@@ -46,6 +49,27 @@ class LoanServiceTest {
         reader.setCardNo(cardNo);
         reader.setName("借阅者-" + cardNo);
         return readers.create(reader);
+    }
+
+    @Test
+    @DisplayName("读者有逾期未还图书时拒绝借书，归还后可继续借")
+    void borrowFailsWhenReaderHasOverdueLoan() {
+        Book first = newBook("逾期书", 1);
+        Book second = newBook("另一本", 1);
+        Reader reader = newReader("R-1902");
+
+        Loan overdue = loans.borrow(first.getId(), reader.getId());
+        overdue.setDueAt(LocalDateTime.now().minusDays(5));
+        loanRepository.save(overdue);
+
+        assertThat(loans.hasOverdue(reader.getId())).isTrue();
+        assertThatThrownBy(() -> loans.borrow(second.getId(), reader.getId()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("逾期");
+
+        loans.returnLoan(overdue.getId());
+        assertThat(loans.hasOverdue(reader.getId())).isFalse();
+        assertThat(loans.borrow(second.getId(), reader.getId()).getId()).isNotNull();
     }
 
     @Test

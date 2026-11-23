@@ -40,6 +40,7 @@ public class ReaderController {
         int requested = jump != null ? jump - 1 : page;
         model.addAttribute("page", Paging.fetch(p -> readers.search(q, p, PAGE_SIZE), requested));
         model.addAttribute("q", q == null ? "" : q);
+        model.addAttribute("overdueReaderIds", loans.readersWithOverdue());
         return "readers/list";
     }
 
@@ -56,10 +57,12 @@ public class ReaderController {
                          Model model) {
         Reader reader = readers.get(id);
         var activeLoans = loans.activeByReader(id);
+        boolean overdue = loans.hasOverdue(id);
         model.addAttribute("reader", reader);
         model.addAttribute("activeLoans", activeLoans);
         model.addAttribute("activeCount", activeLoans.size());
-        model.addAttribute("remaining", Math.max(0, reader.getMaxBorrow() - activeLoans.size()));
+        model.addAttribute("overdue", overdue);
+        model.addAttribute("remaining", overdue ? 0 : Math.max(0, reader.getMaxBorrow() - activeLoans.size()));
         model.addAttribute("history", loans.historyByReader(id, page, PAGE_SIZE));
         return "readers/detail";
     }

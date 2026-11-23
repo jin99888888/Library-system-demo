@@ -10,26 +10,26 @@
     </div>
 
     <div class="stats">
-        <div class="stat">
-            <div class="value" th:text="${bookTitles}">0</div>
+        <a class="stat" th:href="@{/books}" title="查看全部图书">
+            <div class="value" th:text="${categoryCount}">0</div>
             <div class="label">书目种类</div>
-        </div>
-        <div class="stat">
+        </a>
+        <a class="stat" th:href="@{/books}" title="查看全部图书">
             <div class="value" th:text="${totalCopies}">0</div>
             <div class="label">藏书册数</div>
-        </div>
-        <div class="stat">
+        </a>
+        <a class="stat" th:href="@{/readers}" title="查看读者列表">
             <div class="value" th:text="${readerCount}">0</div>
             <div class="label">读者人数</div>
-        </div>
-        <div class="stat">
+        </a>
+        <a class="stat" th:href="@{/loans(status='BORROWED')}" title="查看当前借出的图书">
             <div class="value" th:text="${activeLoans}">0</div>
             <div class="label">在借册数</div>
-        </div>
-        <div class="stat warn">
+        </a>
+        <a class="stat warn" th:href="@{/loans(status='OVERDUE')}" title="查看逾期未还的记录">
             <div class="value" th:text="${overdueCount}">0</div>
             <div class="label">逾期未还</div>
-        </div>
+        </a>
     </div>
 
     <div class="page-head">
