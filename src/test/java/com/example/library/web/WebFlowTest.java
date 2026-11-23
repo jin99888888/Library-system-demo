@@ -196,7 +196,7 @@ class WebFlowTest {
 
         mvc.perform(get("/books").param("q", "不存在的关键字"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("还没有图书")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("没有找到匹配的图书")));
 
         mvc.perform(get("/readers").param("q", "赵六"))
                 .andExpect(status().isOk())
@@ -235,21 +235,56 @@ class WebFlowTest {
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
-    @DisplayName("图书列表可按书名或分类升序、降序排序")
-    void booksListSortsByTitleAndCategory() throws Exception {
+    @DisplayName("图书列表可按分类标签筛选，并可叠加关键词搜索")
+    void booksListFiltersByCategory() throws Exception {
         books.deleteAll();
-        saveBook("Charlie", "C类");
-        saveBook("Alpha", "A类");
-        saveBook("Bravo", "B类");
+        saveBook("Alpha", "文学");
+        saveBook("Bravo", "科幻");
+        saveBook("Charlie", "科幻");
 
-        assertThat(titlesOf(get("/books").param("sort", "title").param("dir", "asc")))
-                .containsExactly("Alpha", "Bravo", "Charlie");
-        assertThat(titlesOf(get("/books").param("sort", "title").param("dir", "desc")))
-                .containsExactly("Charlie", "Bravo", "Alpha");
-        assertThat(titlesOf(get("/books").param("sort", "category").param("dir", "asc").param("page", "0")))
-                .containsExactly("Alpha", "Bravo", "Charlie");
-        assertThat(titlesOf(get("/books").param("sort", "category").param("dir", "desc")))
-                .containsExactly("Charlie", "Bravo", "Alpha");
+        assertThat(titlesOf(get("/books").param("category", "科幻")))
+                .containsExactly("Charlie", "Bravo");
+
+        mvc.perform(get("/books").param("category", "科幻"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("全部")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("chip active")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString(">Alpha<"))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"category\"")));
+
+        assertThat(titlesOf(get("/books").param("category", "科幻").param("q", "Bravo")))
+                .containsExactly("Bravo");
+        assertThat(titlesOf(get("/books").param("q", "Alpha")))
+                .containsExactly("Alpha");
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("分类标签展示每个分类的图书数量")
+    void booksListShowsCategoryCounts() throws Exception {
+        books.deleteAll();
+        saveBook("Alpha", "文学");
+        saveBook("Bravo", "科幻");
+        saveBook("Charlie", "科幻");
+
+        mvc.perform(get("/books"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("科幻")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("文学")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("category=")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("不存在的分类显示空状态而不是报错")
+    void unknownCategoryShowsEmptyState() throws Exception {
+        books.deleteAll();
+        saveBook("Alpha", "文学");
+
+        mvc.perform(get("/books").param("category", "不存在的分类"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("该分类下暂时没有图书")));
     }
 
     @Test

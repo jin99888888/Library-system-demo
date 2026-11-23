@@ -148,6 +148,33 @@ class BookServiceTest {
     }
 
     @Test
+    @DisplayName("按分类筛选，并统计分类数量")
+    void searchFiltersByCategoryAndCountsCategories() {
+        newCategorizedBook("科幻一", "科幻");
+        newCategorizedBook("科幻二", "科幻");
+        newCategorizedBook("文学一", "文学");
+
+        Page<Book> sciFi = books.search(null, "科幻", 0, 10);
+        assertThat(sciFi.getTotalElements()).isEqualTo(2);
+        assertThat(sciFi.getContent()).allMatch(book -> "科幻".equals(book.getCategory()));
+
+        assertThat(books.search("", "科幻", 0, 10).getTotalElements()).isEqualTo(2);
+        assertThat(books.search("科幻一", "文学", 0, 10).getTotalElements()).isZero();
+
+        assertThat(books.totalTitles()).isEqualTo(3);
+        assertThat(books.categories()).extracting(BookService.CategoryCount::name)
+                .containsExactly("文学", "科幻");
+        assertThat(books.categories()).extracting(BookService.CategoryCount::count)
+                .containsExactly(1L, 2L);
+    }
+
+    private Book newCategorizedBook(String title, String category) {
+        Book book = newBook(title, "作者", 1);
+        book.setCategory(category);
+        return books.update(book.getId(), book);
+    }
+
+    @Test
     @DisplayName("统计藏书册数时未借出与借出都计入")
     void totalCopiesCountsAllCopies() {
         long before = books.totalCopies();

@@ -33,29 +33,19 @@ public class BookController {
 
     @GetMapping
     public String list(@RequestParam(required = false) String q,
+                       @RequestParam(required = false) String category,
                        @RequestParam(defaultValue = "0") int page,
-                       @RequestParam(required = false) String sort,
-                       @RequestParam(required = false) String dir,
                        @RequestParam(required = false) Integer jump,
                        Model model) {
-        String sortKey = normalizeSort(sort);
-        String direction = normalizeDirection(dir);
+        String selected = category == null || category.isBlank() ? null : category.trim();
         int requested = jump != null ? jump - 1 : page;
         model.addAttribute("page", Paging.fetch(
-                p -> books.search(q, p, PAGE_SIZE, sortKey, direction), requested));
+                p -> books.search(q, selected, p, PAGE_SIZE), requested));
         model.addAttribute("q", q == null ? "" : q);
-        model.addAttribute("sort", sortKey);
-        model.addAttribute("dir", direction);
+        model.addAttribute("category", selected);
+        model.addAttribute("categories", books.categories());
+        model.addAttribute("totalTitles", books.totalTitles());
         return "books/list";
-    }
-
-    /** 只接受 title / category，其他值走默认排序（最新添加在前）。 */
-    private static String normalizeSort(String sort) {
-        return "title".equals(sort) || "category".equals(sort) ? sort : "id";
-    }
-
-    private static String normalizeDirection(String dir) {
-        return "desc".equalsIgnoreCase(dir) ? "desc" : "asc";
     }
 
     @GetMapping("/new")
