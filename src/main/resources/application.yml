@@ -25,3 +25,6 @@ library:
   admin:
     username: admin
     password: admin123
+  seed:
+    # 首次启动时导入 40 本示例图书（只执行一次，已有图书按 ISBN 去重保留）
+    books: true

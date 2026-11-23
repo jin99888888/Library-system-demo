@@ -204,6 +204,35 @@ class WebFlowTest {
 
     @Test
     @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("图书超过一页时列表显示分页信息")
+    void booksListIsPaged() throws Exception {
+        for (int i = 1; i <= 12; i++) {
+            Book paged = new Book();
+            paged.setTitle("分页图书" + i);
+            paged.setAuthor("作者" + i);
+            paged.setTotalCopies(1);
+            paged.setAvailableCopies(1);
+            books.save(paged);
+        }
+        long total = books.count();
+        long pages = (total + 9) / 10;
+
+        mvc.perform(get("/books"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("books/list"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "第 1 / " + pages + " 页，共 " + total + " 种")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("下一页")));
+
+        mvc.perform(get("/books").param("page", "1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "第 2 / " + pages + " 页，共 " + total + " 种")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("上一页")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
     @DisplayName("图书详情页展示在借读者、逾期历史，并支持还书后回到详情页")
     void bookDetailShowsActiveAndHistory() throws Exception {
         LocalDateTime base = LocalDateTime.now().withNano(0);

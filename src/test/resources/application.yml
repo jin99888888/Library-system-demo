@@ -15,3 +15,6 @@ library:
   admin:
     username: admin
     password: admin123
+  seed:
+    # 测试里默认不导入示例图书，保证每个用例的数据从空表开始
+    books: false

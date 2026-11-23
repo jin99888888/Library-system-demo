@@ -11,6 +11,8 @@
 - **图书/读者详情**：从列表点进详情页，查看图书的在借读者与借阅历史、读者的在借图书与剩余可借额度；详情页可直接还书，或带着当前图书/读者跳到借书页，借还列表中的书名与读者名也可互相跳转。
 - **借阅规则**：可借册数大于 0、读者状态正常、单人在借数不超过其可借上限（默认 5 册）、同一本书未归还时不能重复借阅、借期默认 30 天。
 - **数据保护**：存在未归还借阅的图书/读者不能删除；存在历史借阅记录时也不能删除（读者可改为「停用」，图书可保留归档），以保证借阅历史可追溯。
+- **示例数据**：首次启动时自动导入 40 本常见图书（文学、历史、计算机、科普等分类），可直接体验搜索、分页与借还流程。导入只执行一次：已有图书按 ISBN 去重、不会被覆盖，缺失的示例书会补齐；之后删除示例书也不会再被加回来。
+- **界面**：统一表单控件尺寸与聚焦样式，登录页独立卡片式设计，列表支持悬停高亮，窄屏下表格可横向滚动。
 
 ## 技术栈
 
@@ -51,6 +53,7 @@ mvn spring-boot:run
 | `library.loan.period-days` | 借期（天） | `30` |
 | `library.admin.username` | 初始管理员用户名 | `admin` |
 | `library.admin.password` | 初始管理员密码 | `admin123` |
+| `library.seed.books` | 首次启动时是否导入 40 本示例图书（只执行一次） | `true` |
 
 数据文件位于工作目录下的 `data/library.db`（已被 `.gitignore` 忽略），备份该文件即备份全部数据。
 
@@ -65,13 +68,14 @@ mvn test
 - `BookServiceTest`：图书新增/修改/删除规则、库存重算、搜索与分页。
 - `ReaderServiceTest`：读者登记、证号唯一性、停用后不可借、删除保护、搜索。
 - `LoanServiceTest`：借书规则（无库存/停用/超上限/重复借阅）、还书与库存恢复、逾期天数、状态筛选、按图书/读者维度的在借与历史查询、历史分页。
-- `WebFlowTest`：登录鉴权、表单校验、端到端闭环（新增图书 → 登记读者 → 借出 → 还书）、业务错误提示、详情页展示与还书后回到详情页。
+- `WebFlowTest`：登录鉴权、表单校验、端到端闭环（新增图书 → 登记读者 → 借出 → 还书）、业务错误提示、详情页展示与还书后回到详情页、图书列表分页。
+- `DemoBooksTest` / `BookSeederTest` / `DataInitializerTest`：示例书目的完整性与唯一性、首次启动只导入一次并写入标记、已有图书按 ISBN 保留且补齐缺失、清空后不再重复导入、初始化时按开关决定是否导入。
 
 ## 目录结构
 
 ```
 src/main/java/com/example/library
-├── config/        # 安全配置、初始化管理员
+├── config/        # 安全配置、初始化管理员与示例图书
 ├── domain/        # 实体：Book、Reader、Loan、UserAccount 及枚举
 ├── repository/    # Spring Data JPA 仓储
 ├── service/       # 业务逻辑与 BusinessException
@@ -81,6 +85,7 @@ src/main/resources
 ├── static/css/    # 样式
 └── application.yml
 src/test/java/com/example/library
+├── config/        # 示例数据与初始化测试
 ├── service/       # 业务层测试
 └── web/           # Web 层端到端测试
 ```
