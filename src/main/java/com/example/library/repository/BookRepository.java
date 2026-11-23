@@ -12,14 +12,11 @@ import com.example.library.domain.Book;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
 
-    Page<Book> findAllByOrderByIdDesc(Pageable pageable);
-
     @Query("""
             select b from Book b
             where lower(b.title) like :kw
                or lower(b.author) like :kw
                or lower(coalesce(b.isbn, '')) like :kw
-            order by b.id desc
             """)
     Page<Book> search(@Param("kw") String keyword, Pageable pageable);
 

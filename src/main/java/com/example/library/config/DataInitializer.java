@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import com.example.library.domain.UserAccount;
 import com.example.library.repository.UserAccountRepository;
 
-/** 首次启动时创建默认管理员账号，并在图书表为空时导入示例书目 */
+/** 首次启动时创建默认管理员账号，并按开关导入示例图书与示例借阅数据 */
 @Component
 public class DataInitializer implements ApplicationRunner {
 
@@ -20,28 +20,39 @@ public class DataInitializer implements ApplicationRunner {
     private final UserAccountRepository users;
     private final PasswordEncoder passwordEncoder;
     private final BookSeeder bookSeeder;
+    private final DemoLoanSeeder demoLoanSeeder;
     private final String adminUsername;
     private final String adminPassword;
     private final boolean seedBooks;
+    private final boolean seedDemoLoans;
 
     public DataInitializer(UserAccountRepository users,
                            PasswordEncoder passwordEncoder,
                            BookSeeder bookSeeder,
+                           DemoLoanSeeder demoLoanSeeder,
                            @Value("${library.admin.username:admin}") String adminUsername,
                            @Value("${library.admin.password:admin123}") String adminPassword,
-                           @Value("${library.seed.books:true}") boolean seedBooks) {
+                           @Value("${library.seed.books:true}") boolean seedBooks,
+                           @Value("${library.seed.demo-loans:true}") boolean seedDemoLoans) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.bookSeeder = bookSeeder;
+        this.demoLoanSeeder = demoLoanSeeder;
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
         this.seedBooks = seedBooks;
+        this.seedDemoLoans = seedDemoLoans;
     }
 
     @Override
     public void run(ApplicationArguments args) {
         createAdminIfNeeded();
-        seedBooksIfEnabled();
+        if (seedBooks) {
+            bookSeeder.seedIfNeeded();
+        }
+        if (seedDemoLoans) {
+            demoLoanSeeder.seedIfNeeded();
+        }
     }
 
     private void createAdminIfNeeded() {
@@ -54,12 +65,5 @@ public class DataInitializer implements ApplicationRunner {
         admin.setRole("ADMIN");
         users.save(admin);
         log.info("已创建默认管理员账号：{}（初始密码见配置项 library.admin.password）", adminUsername);
-    }
-
-    private void seedBooksIfEnabled() {
-        if (!seedBooks) {
-            return;
-        }
-        bookSeeder.seedIfNeeded();
     }
 }

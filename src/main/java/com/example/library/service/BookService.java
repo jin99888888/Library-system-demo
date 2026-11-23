@@ -1,10 +1,12 @@
 package com.example.library.service;
 
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,11 +28,33 @@ public class BookService {
 
     @Transactional(readOnly = true)
     public Page<Book> search(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), size);
+        return search(keyword, page, size, null, null);
+    }
+
+    /**
+     * 分页检索图书。
+     *
+     * @param sortKey 排序字段：title（书名）、category（分类）；其它值表示默认排序（最新添加在前）
+     * @param direction asc 或 desc，默认 asc
+     */
+    @Transactional(readOnly = true)
+    public Page<Book> search(String keyword, int page, int size, String sortKey, String direction) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size, sortOf(sortKey, direction));
         if (keyword == null || keyword.isBlank()) {
-            return books.findAllByOrderByIdDesc(pageable);
+            return books.findAll(pageable);
         }
-        return books.search("%" + keyword.trim().toLowerCase() + "%", pageable);
+        return books.search("%" + keyword.trim().toLowerCase(Locale.ROOT) + "%", pageable);
+    }
+
+    /** 把页面传来的排序参数翻译成 Sort，非法值回退到默认排序。 */
+    public static Sort sortOf(String sortKey, String direction) {
+        Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String key = sortKey == null ? "" : sortKey;
+        return switch (key) {
+            case "title" -> Sort.by(dir, "title").and(Sort.by(Sort.Direction.ASC, "id"));
+            case "category" -> Sort.by(dir, "category").and(Sort.by(Sort.Direction.ASC, "title"));
+            default -> Sort.by(Sort.Direction.DESC, "id");
+        };
     }
 
     @Transactional(readOnly = true)

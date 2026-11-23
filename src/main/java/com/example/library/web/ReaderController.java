@@ -35,8 +35,10 @@ public class ReaderController {
     @GetMapping
     public String list(@RequestParam(required = false) String q,
                        @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(required = false) Integer jump,
                        Model model) {
-        model.addAttribute("page", readers.search(q, page, PAGE_SIZE));
+        int requested = jump != null ? jump - 1 : page;
+        model.addAttribute("page", Paging.fetch(p -> readers.search(q, p, PAGE_SIZE), requested));
         model.addAttribute("q", q == null ? "" : q);
         return "readers/list";
     }

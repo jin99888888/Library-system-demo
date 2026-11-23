@@ -104,7 +104,9 @@ class WebFlowTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/readers"));
 
-        Book book = books.findAllByOrderByIdDesc(org.springframework.data.domain.PageRequest.of(0, 1))
+        Book book = books.findAll(org.springframework.data.domain.PageRequest.of(0, 1,
+                        org.springframework.data.domain.Sort.by(
+                                org.springframework.data.domain.Sort.Direction.DESC, "id")))
                 .getContent().get(0);
         Long readerId = readers.findAllByOrderByIdDesc(org.springframework.data.domain.PageRequest.of(0, 1))
                 .getContent().get(0).getId();
@@ -229,6 +231,65 @@ class WebFlowTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
                         "第 2 / " + pages + " 页，共 " + total + " 种")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("上一页")));
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("图书列表可按书名或分类升序、降序排序")
+    void booksListSortsByTitleAndCategory() throws Exception {
+        books.deleteAll();
+        saveBook("Charlie", "C类");
+        saveBook("Alpha", "A类");
+        saveBook("Bravo", "B类");
+
+        assertThat(titlesOf(get("/books").param("sort", "title").param("dir", "asc")))
+                .containsExactly("Alpha", "Bravo", "Charlie");
+        assertThat(titlesOf(get("/books").param("sort", "title").param("dir", "desc")))
+                .containsExactly("Charlie", "Bravo", "Alpha");
+        assertThat(titlesOf(get("/books").param("sort", "category").param("dir", "asc").param("page", "0")))
+                .containsExactly("Alpha", "Bravo", "Charlie");
+        assertThat(titlesOf(get("/books").param("sort", "category").param("dir", "desc")))
+                .containsExactly("Charlie", "Bravo", "Alpha");
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = "ADMIN")
+    @DisplayName("页码跳转支持指定页，越界页码回到最后一页")
+    void pagerJumpGoesToRequestedPageAndClamps() throws Exception {
+        books.deleteAll();
+        for (int i = 1; i <= 12; i++) {
+            saveBook("跳页图书" + i, "A类");
+        }
+
+        mvc.perform(get("/books").param("jump", "2"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页，共 12 种")));
+
+        mvc.perform(get("/books").param("jump", "99"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 2 / 2 页，共 12 种")));
+
+        mvc.perform(get("/books").param("jump", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("第 1 / 2 页，共 12 种")));
+    }
+
+    private void saveBook(String title, String category) {
+        Book book = new Book();
+        book.setTitle(title);
+        book.setAuthor("作者");
+        book.setCategory(category);
+        book.setTotalCopies(1);
+        book.setAvailableCopies(1);
+        books.save(book);
+    }
+
+    private java.util.List<String> titlesOf(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request)
+            throws Exception {
+        var result = mvc.perform(request).andExpect(status().isOk()).andReturn();
+        @SuppressWarnings("unchecked")
+        var page = (org.springframework.data.domain.Page<Book>) result.getModelAndView().getModel().get("page");
+        return page.getContent().stream().map(Book::getTitle).toList();
     }
 
     @Test

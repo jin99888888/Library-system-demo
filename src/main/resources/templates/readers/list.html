@@ -60,6 +60,14 @@
         <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页，共 ${page.totalElements} 人|"></span>
         <a class="btn sm" th:if="${page.hasNext}"
            th:href="@{/readers(q=${q},page=${page.number + 1})}">下一页</a>
+        <form class="pager-jump" method="get" th:action="@{/readers}">
+            <input type="hidden" name="q" th:value="${q}">
+            <label for="reader-page-jump">跳至</label>
+            <input class="page-input" id="reader-page-jump" type="number" name="jump" min="1"
+                   th:max="${page.totalPages}" th:value="${page.number + 1}" required>
+            <label for="reader-page-jump">页</label>
+            <button class="btn sm" type="submit">跳转</button>
+        </form>
     </div>
 </main>
 <footer th:replace="~{fragments/layout :: footer}"></footer>

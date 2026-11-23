@@ -33,9 +33,12 @@ public class LoanController {
     @GetMapping
     public String list(@RequestParam(defaultValue = "ALL") String status,
                        @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(required = false) Integer jump,
                        Model model) {
-        model.addAttribute("page", loans.page(status, page, PAGE_SIZE));
-        model.addAttribute("status", status == null ? "ALL" : status.toUpperCase());
+        String filter = status == null ? "ALL" : status.toUpperCase(java.util.Locale.ROOT);
+        int requested = jump != null ? jump - 1 : page;
+        model.addAttribute("page", Paging.fetch(p -> loans.page(filter, p, PAGE_SIZE), requested));
+        model.addAttribute("status", filter);
         return "loans/list";
     }
 

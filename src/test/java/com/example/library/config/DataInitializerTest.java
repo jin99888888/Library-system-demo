@@ -22,10 +22,11 @@ class DataInitializerTest {
     private final UserAccountRepository users = mock(UserAccountRepository.class);
     private final PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
     private final BookSeeder bookSeeder = mock(BookSeeder.class);
+    private final DemoLoanSeeder demoLoanSeeder = mock(DemoLoanSeeder.class);
 
-    private DataInitializer initializer(boolean seedBooks) {
-        return new DataInitializer(users, passwordEncoder, bookSeeder,
-                "admin", "admin123", seedBooks);
+    private DataInitializer initializer(boolean seedBooks, boolean seedDemoLoans) {
+        return new DataInitializer(users, passwordEncoder, bookSeeder, demoLoanSeeder,
+                "admin", "admin123", seedBooks, seedDemoLoans);
     }
 
     private void run(DataInitializer initializer) {
@@ -33,13 +34,14 @@ class DataInitializerTest {
     }
 
     @Test
-    @DisplayName("空库首次启动时创建管理员并导入示例图书")
-    void createsAdminAndSeedsBooks() {
+    @DisplayName("空库首次启动时创建管理员并导入示例图书与借阅数据")
+    void createsAdminAndSeedsDemoData() {
         when(users.count()).thenReturn(0L);
         when(passwordEncoder.encode("admin123")).thenReturn("encoded");
         when(bookSeeder.seedIfNeeded()).thenReturn(40);
+        when(demoLoanSeeder.seedIfNeeded()).thenReturn(13);
 
-        run(initializer(true));
+        run(initializer(true, true));
 
         ArgumentCaptor<UserAccount> captor = ArgumentCaptor.forClass(UserAccount.class);
         verify(users).save(captor.capture());
@@ -48,26 +50,29 @@ class DataInitializerTest {
         assertThat(admin.getPassword()).isEqualTo("encoded");
         assertThat(admin.getRole()).isEqualTo("ADMIN");
         verify(bookSeeder).seedIfNeeded();
+        verify(demoLoanSeeder).seedIfNeeded();
     }
 
     @Test
-    @DisplayName("已有管理员时不再创建账号，但仍会检查示例图书")
-    void skipsAdminWhenPresentButStillSeedsBooks() {
+    @DisplayName("已有管理员时不再创建账号，但仍会检查示例数据")
+    void skipsAdminWhenPresentButStillSeedsData() {
         when(users.count()).thenReturn(1L);
 
-        run(initializer(true));
+        run(initializer(true, true));
 
         verify(users, never()).save(any(UserAccount.class));
         verify(bookSeeder).seedIfNeeded();
+        verify(demoLoanSeeder).seedIfNeeded();
     }
 
     @Test
-    @DisplayName("关闭示例数据开关后不导入图书")
+    @DisplayName("关闭示例数据开关后不导入图书与借阅记录")
     void skipsSeedingWhenDisabled() {
         when(users.count()).thenReturn(1L);
 
-        run(initializer(false));
+        run(initializer(false, false));
 
         verifyNoInteractions(bookSeeder);
+        verifyNoInteractions(demoLoanSeeder);
     }
 }

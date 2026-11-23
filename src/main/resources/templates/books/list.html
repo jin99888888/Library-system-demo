@@ -13,17 +13,37 @@
 
     <form class="search" method="get" th:action="@{/books}">
         <input type="text" name="q" th:value="${q}" placeholder="按书名、作者或 ISBN 搜索">
+        <input type="hidden" name="sort" th:value="${sort}">
+        <input type="hidden" name="dir" th:value="${dir}">
         <button class="btn" type="submit">搜索</button>
         <a class="btn ghost" th:href="@{/books}" th:if="${!#strings.isEmpty(q)}">清空</a>
     </form>
 
+    <div class="sort-bar" th:if="${sort != 'id'}">
+        <span th:text="|当前排序：${sort == 'title' ? '书名' : '分类'} ${dir == 'asc' ? '升序' : '降序'}|"></span>
+        <a class="btn ghost sm" th:href="@{/books(q=${q})}">恢复默认排序</a>
+    </div>
+
     <table class="table">
-        <thead>
+        <thead th:with="nextTitleDir=${sort == 'title' and dir == 'asc' ? 'desc' : 'asc'},
+                        nextCategoryDir=${sort == 'category' and dir == 'asc' ? 'desc' : 'asc'}">
         <tr>
-            <th>书名</th>
+            <th>
+                <a class="sort" th:href="@{/books(q=${q},sort='title',dir=${nextTitleDir})}">
+                    书名
+                    <span class="sort-arrow"
+                          th:text="${sort == 'title' ? (dir == 'asc' ? '↑' : '↓') : '↕'}"></span>
+                </a>
+            </th>
             <th>作者</th>
             <th>ISBN</th>
-            <th>分类</th>
+            <th>
+                <a class="sort" th:href="@{/books(q=${q},sort='category',dir=${nextCategoryDir})}">
+                    分类
+                    <span class="sort-arrow"
+                          th:text="${sort == 'category' ? (dir == 'asc' ? '↑' : '↓') : '↕'}"></span>
+                </a>
+            </th>
             <th>馆藏位置</th>
             <th>可借 / 总册</th>
             <th class="actions">操作</th>
@@ -56,10 +76,20 @@
 
     <div class="pager" th:if="${page.totalPages > 1}">
         <a class="btn sm" th:if="${page.hasPrevious}"
-           th:href="@{/books(q=${q},page=${page.number - 1})}">上一页</a>
+           th:href="@{/books(q=${q},sort=${sort},dir=${dir},page=${page.number - 1})}">上一页</a>
         <span th:text="|第 ${page.number + 1} / ${page.totalPages} 页，共 ${page.totalElements} 种|"></span>
         <a class="btn sm" th:if="${page.hasNext}"
-           th:href="@{/books(q=${q},page=${page.number + 1})}">下一页</a>
+           th:href="@{/books(q=${q},sort=${sort},dir=${dir},page=${page.number + 1})}">下一页</a>
+        <form class="pager-jump" method="get" th:action="@{/books}">
+            <input type="hidden" name="q" th:value="${q}">
+            <input type="hidden" name="sort" th:value="${sort}">
+            <input type="hidden" name="dir" th:value="${dir}">
+            <label for="book-page-jump">跳至</label>
+            <input class="page-input" id="book-page-jump" type="number" name="jump" min="1"
+                   th:max="${page.totalPages}" th:value="${page.number + 1}" required>
+            <label for="book-page-jump">页</label>
+            <button class="btn sm" type="submit">跳转</button>
+        </form>
     </div>
 </main>
 <footer th:replace="~{fragments/layout :: footer}"></footer>
